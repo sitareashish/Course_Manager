@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - EduCore</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+        <span class="navbar-brand mb-0 h1">EduCore | Admin Panel</span>
+        <span class="text-white">Welcome, {{ session['name'] }}</span>
+        <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button">Manage Users</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="courses-tab" data-bs-toggle="tab" data-bs-target="#courses" type="button">Manage Courses</button>
+        </li>
+    </ul>
+
+    <div class="tab-content bg-white p-4 border border-top-0" id="adminTabsContent">
+        
+        <div class="tab-pane fade show active" id="users">
+            <div class="row">
+                <div class="col-md-4">
+                    <h4>Add New User</h4>
+                    <form action="/add_user" method="POST">
+                        <div class="mb-3">
+                            <input type="text" name="name" class="form-control" placeholder="Full Name" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" name="email" class="form-control" placeholder="Email Address" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" name="password" class="form-control" placeholder="Password" required>
+                        </div>
+                        <div class="mb-3">
+                            <select name="role" class="form-select">
+                                <option value="student">Student</option>
+                                <option value="instructor">Instructor</option>
+                                <option value="analyst">Data Analyst</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Create User</button>
+                    </form>
+                </div>
+
+                <div class="col-md-8">
+                    <h4>Existing Users</h4>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr><th>ID</th><th>Name</th><th>Role</th><th>Email</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.user_id }}</td>
+                                <td>{{ user.name }}</td>
+                                <td><span class="badge bg-secondary">{{ user.role }}</span></td>
+                                <td>{{ user.email }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="courses">
+            <div class="row">
+                <div class="col-md-4">
+                    <h4>Create Course</h4>
+                    <form action="/add_course" method="POST">
+                        <div class="mb-3">
+                            <input type="text" name="title" class="form-control" placeholder="Course Title (e.g. DBMS)" required>
+                        </div>
+                        <div class="mb-3">
+                            <textarea name="description" class="form-control" placeholder="Description"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label>Assign Instructor:</label>
+                            <select name="instructor_id" class="form-select">
+                                {% for user in users %}
+                                    {% if user.role == 'instructor' %}
+                                        <option value="{{ user.user_id }}">{{ user.name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Create Course</button>
+                    </form>
+                </div>
+
+                <div class="col-md-8">
+                    <h4>Course List</h4>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr><th>ID</th><th>Title</th><th>Instructor</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for course in courses %}
+                            <tr>
+                                <td>{{ course.course_id }}</td>
+                                <td>{{ course.title }}</td>
+                                <td>
+                                    ID: {{ course.instructor_id }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
