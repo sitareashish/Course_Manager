@@ -1,0 +1,77 @@
+/* static/css/style.css */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap');
+
+:root {
+    /* MYJU'S BRAND COLORS */
+    --primary: #8e44ad;       /* The Main Purple */
+    --primary-dark: #6c3483;  /* Darker Purple for Hover */
+    --secondary: #d35400;     /* The Accent Orange */
+    --success: #27ae60;
+    --info: #2980b9;
+    --warning: #f39c12;
+    --danger: #c0392b;
+    --light: #f8f9fc;
+    --dark: #2c3e50;
+    --surface: #ffffff;
+    --shadow-sm: 0 .125rem .25rem 0 rgba(58, 59, 69, .2);
+    --shadow-lg: 0 10px 30px rgba(142, 68, 173, 0.2); /* Purple Shadow */
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: #f0f2f5;
+    color: #2c3e50;
+    overflow-x: hidden;
+}
+
+/* --- LOGO STYLING --- */
+.brand-text { font-weight: 900; letter-spacing: -1px; font-size: 1.5rem; color: white; }
+.brand-orange { color: var(--secondary); }
+
+/* --- ANIMATIONS --- */
+.fade-in-up { animation: fadeInUp 0.8s ease-out; }
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translate3d(0, 40px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+/* --- CARDS --- */
+.card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    background: var(--surface);
+    overflow: hidden;
+}
+.card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+
+.card-header {
+    background-color: var(--surface);
+    border-bottom: 2px solid #f0f2f5;
+    padding: 1.2rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* --- BUTTONS --- */
+.btn { border-radius: 50px; padding: 0.5rem 1.5rem; font-weight: 700; transition: all 0.2s; }
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, #9b59b6 100%);
+    border: none;
+    box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+    transform: translateY(-2px);
+}
+
+/* --- NAVBAR --- */
+.navbar-custom {
+    background: linear-gradient(90deg, var(--primary) 0%, #2c3e50 100%);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+/* --- DATA TABLES --- */
+.table thead th { background-color: #f8f9fc; color: var(--primary); border-bottom: 2px solid #e3e6f0; }
+.page-item.active .page-link { background-color: var(--primary); border-color: var(--primary); }

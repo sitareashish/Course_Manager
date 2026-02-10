@@ -3,50 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - EduCore</title>
+    <title>Sign In | Myju's Learning</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <style>
-        body { background-color: #f8f9fa; display: flex; align-items: center; height: 100vh; }
-        .card { box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        body { font-family: 'Montserrat', sans-serif; height: 100vh; overflow: hidden; }
+        
+        /* Myju's Branding Colors */
+        :root { --myjus-purple: #8e44ad; --myjus-orange: #d35400; }
+
+        .login-wrapper { display: flex; height: 100%; width: 100%; }
+
+        /* LEFT SIDE: FUTURISTIC IMAGE */
+        .brand-section {
+            flex: 1.5;
+            background: url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop') no-repeat center center;
+            background-size: cover;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3rem;
+            color: white;
+        }
+
+        .brand-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(142, 68, 173, 0.85) 0%, rgba(44, 62, 80, 0.9) 100%);
+            z-index: 1;
+        }
+
+        .brand-content { position: relative; z-index: 2; }
+
+        /* LOGO STYLING */
+        .myjus-logo { font-weight: 900; letter-spacing: -1px; font-size: 2.5rem; }
+        .text-purple { color: #dcdde1; } /* Light grey for contrast on dark bg */
+        .text-orange { color: #e67e22; }
+
+        /* RIGHT SIDE: FORM */
+        .form-section {
+            flex: 1;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .login-card { width: 100%; max-width: 420px; animation: slideIn 0.6s ease-out; }
+
+        .btn-myjus {
+            background: linear-gradient(90deg, var(--myjus-purple) 0%, #9b59b6 100%);
+            border: none;
+            color: white;
+            padding: 0.8rem;
+            font-weight: 700;
+            border-radius: 50px;
+            transition: transform 0.2s;
+        }
+        .btn-myjus:hover { transform: scale(1.02); color: white; box-shadow: 0 5px 15px rgba(142, 68, 173, 0.4); }
+
+        /* FLOATING LABELS */
+        .form-floating > .form-control:focus { border-color: var(--myjus-purple); box-shadow: 0 0 0 4px rgba(142, 68, 173, 0.1); }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        
+        /* Mobile */
+        @media (max-width: 992px) { .brand-section { display: none; } }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header bg-primary text-white text-center">
-                        <h3>EduCore Login</h3>
-                    </div>
-                    <div class="card-body">
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
 
-                        <form action="/login" method="POST">
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email Address</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
-                            </div>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Sign In</button>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="card-footer text-center">
-                        <small>Default Admin: admin@iitkgp.ac.in / 12345</small>
-                    </div>
+<div class="login-wrapper">
+    <div class="brand-section">
+        <div class="brand-overlay"></div>
+        <div class="brand-content top">
+            <div class="myjus-logo"><i class="fas fa-atom me-2"></i>My<span class="text-orange">ju's</span></div>
+        </div>
+        <div class="brand-content bottom">
+            <h2 class="fw-bold mb-3">"Make learning fall in love with you."</h2>
+            <p class="opacity-75">Join the revolution in personalized education.</p>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="login-card">
+            <div class="d-lg-none text-center mb-4">
+                <span class="fs-1 fw-bold text-dark">My<span class="text-orange">ju's</span></span>
+            </div>
+
+            <h3 class="fw-bold mb-4 text-dark">Student Login</h3>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} shadow-sm rounded-3 small" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="/login" method="POST">
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+                    <label for="email">Email address</label>
                 </div>
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                    <label for="password">Password</label>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="remember">
+                        <label class="form-check-label small text-muted" for="remember">Remember me</label>
+                    </div>
+                    <a href="/forgot_password" class="small text-decoration-none fw-bold" style="color: var(--myjus-purple);">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-myjus w-100 mb-4">Login to Class</button>
+            </form>
+            
+            <div class="text-center">
+                <p class="small text-muted">Don't have an account? <a href="#" class="fw-bold text-decoration-none text-dark">Register</a></p>
             </div>
         </div>
     </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

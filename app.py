@@ -1,98 +1,101 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import mysql.connector
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key_for_lab_demo'  # Required for sessions
+app.secret_key = 'myjus_platform_secret_key_2026'
 
-# --- Database Configuration ---
+# Database configuration
 db_config = {
     'user': 'root',
-    'password': '',         
+    'password': '',
     'host': 'localhost',
-    'database': 'course_db' 
+    'database': 'course_db'
 }
 
-# --- Helper: Get DB Connection ---
-def get_db():
-    conn = mysql.connector.connect(**db_config)
-    return conn
+def get_db_connection():
+    """Establishes a connection to the backend database."""
+    return mysql.connector.connect(**db_config)
 
-# --- Route: Home (Redirects to Login) ---
+# --- PUBLIC ROUTES ---
+
 @app.route('/')
-def home():
+def index():
+    """Landing page route."""
     if 'user_id' in session:
-        return f"<h1>Logged in as {session['role']}</h1> <a href='/logout'>Logout</a>"
-    return redirect(url_for('login'))
+        # Redirect authenticated users to their respective dashboards
+        role_map = {
+            'admin': 'admin_dashboard',
+            'student': 'student_dashboard',
+            'instructor': 'instructor_dashboard',
+            'analyst': 'analyst_dashboard'
+        }
+        return redirect(url_for(role_map.get(session['role'], 'login')))
+    return render_template('index.html')
 
-# --- Route: Login ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Handles user authentication."""
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+        email = request.form.get('email')
+        password = request.form.get('password')
         
         try:
-            conn = get_db()
+            conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
             
-            # Check if user exists
-            query = "SELECT * FROM Users WHERE email = %s AND password = %s"
-            cursor.execute(query, (email, password))
+            cursor.execute("SELECT * FROM Users WHERE email = %s", (email,))
             user = cursor.fetchone()
             
             cursor.close()
             conn.close()
             
-            if user:
-                # Store user info in the Session (Browser Cookie)
+            if user and check_password_hash(user['password'], password):
                 session['user_id'] = user['user_id']
                 session['name'] = user['name']
                 session['role'] = user['role']
                 
-                flash('Login Successful!', 'success')
+                flash(f"Welcome back, {user['name']}", 'success')
                 
-                # Redirect based on Role (We will build these pages next)
-                if user['role'] == 'admin':
-                    return redirect(url_for('admin_dashboard'))
-                elif user['role'] == 'student':
-                    return redirect(url_for('student_dashboard'))
-                elif user['role'] == 'instructor':
-                    return redirect(url_for('instructor_dashboard'))
-                elif user['role'] == 'analyst':
-                    return redirect(url_for('analyst_dashboard'))
+                if user['role'] == 'admin': return redirect(url_for('admin_dashboard'))
+                elif user['role'] == 'student': return redirect(url_for('student_dashboard'))
+                elif user['role'] == 'instructor': return redirect(url_for('instructor_dashboard'))
+                elif user['role'] == 'analyst': return redirect(url_for('analyst_dashboard'))
             else:
-                flash('Invalid email or password', 'danger')
+                flash('Invalid credentials provided.', 'danger')
                 
         except mysql.connector.Error as err:
-            flash(f"Database Error: {err}", 'danger')
+            flash(f"System Error: {err}", 'danger')
             
     return render_template('login.html')
 
-# --- Route: Logout ---
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
-# --- Placeholders for Dashboards (So the app doesn't crash) ---
-# --- ADMIN ROUTES ---
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    """Mock password recovery flow."""
+    if request.method == 'POST':
+        email = request.form['email']
+        # In production, integrate SMTP here.
+        flash(f'Reset instructions sent to {email}', 'success')
+        return redirect(url_for('login'))
+    return render_template('forgot_password.html')
+
+# --- ROLE-BASED DASHBOARDS ---
 
 @app.route('/admin')
 def admin_dashboard():
-    # Security Check
-    if 'role' not in session or session['role'] != 'admin':
-        flash('Access Denied', 'danger')
-        return redirect(url_for('login'))
+    if session.get('role') != 'admin': return redirect(url_for('login'))
     
-    conn = get_db()
+    conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # 1. Get all Users (for the table and dropdowns)
-    cursor.execute("SELECT * FROM Users")
+    cursor.execute("SELECT * FROM Users ORDER BY created_at DESC")
     users = cursor.fetchall()
     
-    # 2. Get all Courses
     cursor.execute("SELECT * FROM Courses")
     courses = cursor.fetchall()
     
@@ -103,160 +106,210 @@ def admin_dashboard():
 
 @app.route('/add_user', methods=['POST'])
 def add_user():
-    # Security Check
-    if 'role' not in session or session['role'] != 'admin': return redirect(url_for('login'))
+    if session.get('role') != 'admin': return redirect(url_for('login'))
 
     name = request.form['name']
     email = request.form['email']
     password = request.form['password']
     role = request.form['role']
     
+    hashed_pw = generate_password_hash(password)
+    
     try:
-        conn = get_db()
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO Users (name, email, password, role) VALUES (%s, %s, %s, %s)", 
-                       (name, email, password, role))
+                       (name, email, hashed_pw, role))
         conn.commit()
-        cursor.close()
-        conn.close()
-        flash(f'User {name} added successfully!', 'success')
-    except mysql.connector.Error as err:
-        flash(f'Error: {err}', 'danger')
+        flash(f'User {name} created successfully.', 'success')
+    except Exception as e:
+        flash(f'Error creating user: {e}', 'danger')
+    finally:
+        if conn.is_connected(): cursor.close(); conn.close()
         
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/add_course', methods=['POST'])
 def add_course():
-    # Security Check
-    if 'role' not in session or session['role'] != 'admin': return redirect(url_for('login'))
+    if session.get('role') != 'admin': return redirect(url_for('login'))
 
-    title = request.form['title']
-    description = request.form['description']
-    instructor_id = request.form['instructor_id']
-    
     try:
-        conn = get_db()
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO Courses (title, description, instructor_id) VALUES (%s, %s, %s)", 
-                       (title, description, instructor_id))
+                       (request.form['title'], request.form['description'], request.form['instructor_id']))
         conn.commit()
-        cursor.close()
-        conn.close()
-        flash(f'Course {title} created!', 'success')
-    except mysql.connector.Error as err:
-        flash(f'Error: {err}', 'danger')
+        flash('Course added successfully.', 'success')
+    except Exception as e:
+        flash(f'Error adding course: {e}', 'danger')
+    finally:
+        if conn.is_connected(): cursor.close(); conn.close()
         
     return redirect(url_for('admin_dashboard'))
 
-# --- STUDENT ROUTES ---
-
 @app.route('/student')
 def student_dashboard():
-    if 'role' not in session or session['role'] != 'student': return redirect(url_for('login'))
+    if session.get('role') != 'student': return redirect(url_for('login'))
     
     user_id = session['user_id']
-    conn = get_db()
+    conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # 1. Get courses the student is ALREADY enrolled in
+    # Fetch enrolled courses with grades
     query_enrolled = """
-        SELECT Courses.course_id, Courses.title, Courses.instructor_id 
-        FROM Enrollments 
-        JOIN Courses ON Enrollments.course_id = Courses.course_id 
-        WHERE Enrollments.student_id = %s
+        SELECT c.course_id, c.title, c.description, e.grade, e.enrollment_date
+        FROM Enrollments e
+        JOIN Courses c ON e.course_id = c.course_id 
+        WHERE e.student_id = %s
     """
     cursor.execute(query_enrolled, (user_id,))
     my_courses = cursor.fetchall()
     
-    # 2. Get courses the student is NOT enrolled in (Available)
-    # This logic finds courses where the ID is NOT in the student's enrollment list
+    # Fetch available courses
     query_available = """
         SELECT * FROM Courses 
-        WHERE course_id NOT IN (
-            SELECT course_id FROM Enrollments WHERE student_id = %s
-        )
+        WHERE course_id NOT IN (SELECT course_id FROM Enrollments WHERE student_id = %s)
     """
     cursor.execute(query_available, (user_id,))
     available_courses = cursor.fetchall()
     
+    # Calculate performance metrics
+    grades = [c['grade'] for c in my_courses if c['grade'] != 'NA']
+    grade_counts = {g: grades.count(g) for g in ['A', 'B', 'C', 'F']}
+    
     cursor.close()
     conn.close()
     
-    return render_template('student_dashboard.html', my_courses=my_courses, available_courses=available_courses)
+    return render_template('student_dashboard.html', 
+                           my_courses=my_courses, 
+                           available_courses=available_courses,
+                           grade_counts=grade_counts)
 
 @app.route('/enroll', methods=['POST'])
 def enroll():
-    if 'role' not in session or session['role'] != 'student': return redirect(url_for('login'))
-    
-    student_id = session['user_id']
-    course_id = request.form['course_id']
+    if session.get('role') != 'student': return redirect(url_for('login'))
     
     try:
-        conn = get_db()
+        conn = get_db_connection()
         cursor = conn.cursor()
-        
-        # Register the student
-        cursor.execute("INSERT INTO Enrollments (student_id, course_id) VALUES (%s, %s)", (student_id, course_id))
+        cursor.execute("INSERT INTO Enrollments (student_id, course_id) VALUES (%s, %s)", 
+                       (session['user_id'], request.form['course_id']))
         conn.commit()
-        
-        cursor.close()
-        conn.close()
-        flash('Successfully enrolled in course!', 'success')
-        
-    except mysql.connector.Error as err:
-        flash(f'Error enrolling: {err}', 'danger')
+        flash('Enrollment successful.', 'success')
+    except Exception as e:
+        flash('Enrollment failed. You might already be enrolled.', 'warning')
+    finally:
+        if conn.is_connected(): cursor.close(); conn.close()
         
     return redirect(url_for('student_dashboard'))
 
 @app.route('/instructor')
 def instructor_dashboard():
-    if 'role' not in session or session['role'] != 'instructor': return redirect(url_for('login'))
-    return "<h1>Instructor Dashboard</h1><a href='/logout'>Logout</a>"
-
-# --- ANALYST ROUTES ---
-
-@app.route('/analyst')
-def analyst_dashboard():
-    if 'role' not in session or session['role'] != 'analyst': return redirect(url_for('login'))
+    if session.get('role') != 'instructor': return redirect(url_for('login'))
     
-    conn = get_db()
-    cursor = conn.cursor()
+    instructor_id = session['user_id']
+    course_id = request.args.get('course_id')
     
-    # 1. Simple Counters for the KPI Cards
-    cursor.execute("SELECT COUNT(*) FROM Users WHERE role='student'")
-    total_students = cursor.fetchone()[0]
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
     
-    cursor.execute("SELECT COUNT(*) FROM Courses")
-    total_courses = cursor.fetchone()[0]
+    cursor.execute("SELECT * FROM Courses WHERE instructor_id = %s", (instructor_id,))
+    my_courses = cursor.fetchall()
     
-    cursor.execute("SELECT COUNT(*) FROM Enrollments")
-    total_enrollments = cursor.fetchone()[0]
+    selected_course = None
+    students = []
     
-    # 2. Complex Query for the Graph (Group By)
-    # Counts enrollments for each course. Uses LEFT JOIN so empty courses show '0'.
-    query_stats = """
-        SELECT Courses.title, COUNT(Enrollments.student_id) as count
-        FROM Courses
-        LEFT JOIN Enrollments ON Courses.course_id = Enrollments.course_id
-        GROUP BY Courses.course_id, Courses.title
-    """
-    cursor.execute(query_stats)
-    results = cursor.fetchall()
+    if course_id:
+        cursor.execute("SELECT * FROM Courses WHERE course_id = %s AND instructor_id = %s", (course_id, instructor_id))
+        selected_course = cursor.fetchone()
+        
+        if selected_course:
+            cursor.execute("""
+                SELECT u.user_id as student_id, u.name, u.email, e.grade
+                FROM Enrollments e
+                JOIN Users u ON e.student_id = u.user_id
+                WHERE e.course_id = %s
+            """, (course_id,))
+            students = cursor.fetchall()
     
     cursor.close()
     conn.close()
     
-    # 3. Process Data for Chart.js (Separate into two lists)
-    # results looks like: [('DBMS', 5), ('Algorithms', 2)]
-    course_names = [row[0] for row in results]
-    enrollment_counts = [row[1] for row in results]
+    return render_template('instructor_dashboard.html', 
+                           courses=my_courses, 
+                           selected_course=selected_course, 
+                           students=students)
+
+@app.route('/update_grade', methods=['POST'])
+def update_grade():
+    if session.get('role') != 'instructor': return redirect(url_for('login'))
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE Enrollments SET grade = %s WHERE course_id = %s AND student_id = %s", 
+                       (request.form['grade'], request.form['course_id'], request.form['student_id']))
+        conn.commit()
+        flash('Grade updated.', 'success')
+    except Exception as e:
+        flash(f'Update failed: {e}', 'danger')
+    finally:
+        if conn.is_connected(): cursor.close(); conn.close()
+        
+    return redirect(url_for('instructor_dashboard', course_id=request.form['course_id']))
+
+@app.route('/analyst')
+def analyst_dashboard():
+    if session.get('role') != 'analyst': return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Fetch KPIs
+    cursor.execute("SELECT COUNT(*) FROM Users WHERE role='student'")
+    total_students = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM Courses")
+    total_courses = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM Enrollments")
+    total_enrollments = cursor.fetchone()[0]
+    
+    # Analytics: Course Popularity
+    cursor.execute("""
+        SELECT c.title, COUNT(e.student_id) 
+        FROM Courses c
+        LEFT JOIN Enrollments e ON c.course_id = e.course_id 
+        GROUP BY c.course_id, c.title
+    """)
+    course_data = cursor.fetchall()
+    
+    # Analytics: Grade Distribution
+    cursor.execute("SELECT grade, COUNT(*) FROM Enrollments WHERE grade != 'NA' GROUP BY grade")
+    grade_data = cursor.fetchall()
+    
+    # Analytics: Top Performers
+    cursor.execute("""
+        SELECT u.name, u.email, COUNT(e.grade) as a_count
+        FROM Users u
+        JOIN Enrollments e ON u.user_id = e.student_id
+        WHERE e.grade = 'A'
+        GROUP BY u.user_id
+        ORDER BY a_count DESC
+        LIMIT 5
+    """)
+    top_students = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
     
     return render_template('analyst_dashboard.html', 
                            total_students=total_students,
                            total_courses=total_courses,
                            total_enrollments=total_enrollments,
-                           course_names=course_names,
-                           enrollment_counts=enrollment_counts)
+                           course_names=[row[0] for row in course_data],
+                           enrollment_counts=[row[1] for row in course_data],
+                           grades=[row[0] for row in grade_data],
+                           grade_counts=[row[1] for row in grade_data],
+                           top_students=top_students)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
