@@ -60,7 +60,7 @@ def seed_database():
     sql = "INSERT INTO Users (name, email, password, role) VALUES (%s, %s, %s, %s)"
     cursor.executemany(sql, users_data)
     conn.commit()
-    print(f"     ✅ Added {len(users_data)} Users.")
+    print(f" Added {len(users_data)} Users.")
 
     # --- GET IDs BACK ---
     # We need the real IDs from the database to link courses/enrollments
@@ -88,7 +88,7 @@ def seed_database():
     sql = "INSERT INTO Courses (title, description, instructor_id) VALUES (%s, %s, %s)"
     cursor.executemany(sql, courses_data)
     conn.commit()
-    print(f"     ✅ Added {len(courses_data)} Courses.")
+    print(f" Added {len(courses_data)} Courses.")
 
     # --- GET COURSE IDs ---
     cursor.execute("SELECT course_id FROM Courses")
@@ -108,13 +108,13 @@ def seed_database():
     sql = "INSERT INTO Enrollments (student_id, course_id) VALUES (%s, %s)"
     cursor.executemany(sql, enrollments_data)
     conn.commit()
-    print(f"     ✅ Added {len(enrollments_data)} Enrollments.")
+    print(f" Added {len(enrollments_data)} Enrollments.")
 
     cursor.close()
     conn.close()
-    print("\n🎉 SUCCESS! Your database is now populated.")
+    print("\n  SUCCESS! Your database is now populated.")
     print("------------------------------------------------")
-    print("🔑 Login Credentials for Testing:")
+    print("   Login Credentials for Testing:")
     print("   Admin:    admin@iitkgp.ac.in / 12345")
     print("   Analyst:  analyst@iitkgp.ac.in / 12345")
     print("   Any Student: (Use any email from DB) / 12345")

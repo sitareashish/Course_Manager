@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Analytics Dashboard - EduCore</title>
+    <title>Analyst Dashboard | Myju's</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -10,137 +10,166 @@
 </head>
 <body class="bg-light">
 
-<nav class="navbar navbar-expand-lg navbar-dark navbar-custom mb-4">
+<nav class="navbar navbar-dark navbar-custom mb-4 shadow-sm">
     <div class="container">
-        <a class="navbar-brand brand-text" href="#">
-            <i class="fas fa-atom me-2"></i>My<span class="brand-orange">ju's</span> 
-            </a>
-        
+        <a class="navbar-brand brand-text" href="#"><i class="fas fa-chart-line me-2"></i>My<span class="brand-orange">ju's</span> Intelligence</a>
         <div class="d-flex align-items-center">
-            <span class="text-white me-3 fw-bold">{{ session['name'] }}</span>
-            <a href="/logout" class="btn btn-outline-light btn-sm rounded-pill">Logout</a>
+            <span class="text-white me-3 d-none d-md-block">Welcome, {{ session['name'] }}</span>
+            <a href="/logout" class="btn btn-outline-light btn-sm rounded-pill px-3">Logout</a>
         </div>
     </div>
 </nav>
 
-<div class="container">
+<div class="container pb-5">
+    
     <div class="row g-4 mb-4">
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm border-start border-4 border-primary h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3 text-primary"><i class="fas fa-user-graduate fa-2x"></i></div>
-                    <div><h6 class="text-muted mb-1">Total Students</h6><h2 class="mb-0 fw-bold">{{ total_students }}</h2></div>
+            <div class="card border-0 shadow-sm h-100 border-start border-4 border-primary">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase mb-2">Total Students</h6>
+                    <h2 class="display-4 fw-bold text-dark">{{ total_students }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm border-start border-4 border-success h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="bg-success bg-opacity-10 p-3 rounded-circle me-3 text-success"><i class="fas fa-book fa-2x"></i></div>
-                    <div><h6 class="text-muted mb-1">Active Courses</h6><h2 class="mb-0 fw-bold">{{ total_courses }}</h2></div>
+            <div class="card border-0 shadow-sm h-100 border-start border-4 border-warning">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase mb-2">Active Courses</h6>
+                    <h2 class="display-4 fw-bold text-dark">{{ total_courses }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm border-start border-4 border-warning h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle me-3 text-warning"><i class="fas fa-clipboard-check fa-2x"></i></div>
-                    <div><h6 class="text-muted mb-1">Total Enrollments</h6><h2 class="mb-0 fw-bold">{{ total_enrollments }}</h2></div>
+            <div class="card border-0 shadow-sm h-100 border-start border-4 border-success">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase mb-2">Total Enrollments</h6>
+                    <h2 class="display-4 fw-bold text-dark">{{ total_enrollments }}</h2>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4 mb-4">
-        <div class="col-md-8">
+    <div class="row g-4">
+        
+        <div class="col-lg-8">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white fw-bold"><i class="fas fa-poll me-2 text-primary"></i>Course Popularity</div>
+                <div class="card-header bg-white fw-bold">
+                    <i class="fas fa-chart-bar me-2 text-primary"></i> University Grade Distribution
+                </div>
                 <div class="card-body">
-                    <canvas id="enrollmentChart" height="120"></canvas>
+                    <canvas id="gradeChart" height="120"></canvas>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white fw-bold"><i class="fas fa-chart-pie me-2 text-success"></i>Grade Distribution</div>
-                <div class="card-body">
-                    <canvas id="gradeChart"></canvas>
-                    {% if not grades %}
-                        <p class="text-center text-muted mt-3 small">No grades assigned yet.</p>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100 border-top border-danger border-3">
+                <div class="card-header bg-white fw-bold text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i> At-Risk Students (Failing)
+                </div>
+                <div class="list-group list-group-flush">
+                    {% if at_risk_students %}
+                        {% for s in at_risk_students %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 fw-bold">{{ s.name }}</h6>
+                                <span class="badge bg-danger">Grade: F</span>
+                            </div>
+                            <small class="text-muted">{{ s.course }}</small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="p-3 text-center text-muted">No failing students found! 🎉</div>
                     {% endif %}
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white fw-bold"><i class="fas fa-trophy me-2 text-warning"></i>Top Performing Students (Most A's)</div>
-        <div class="card-body p-0">
-            <table class="table table-hover mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4">Student Name</th>
-                        <th>Email</th>
-                        <th>'A' Grades Achieved</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in top_students %}
-                    <tr>
-                        <td class="ps-4 fw-bold">{{ student[0] }}</td>
-                        <td class="text-muted">{{ student[1] }}</td>
-                        <td><span class="badge bg-success rounded-pill px-3">{{ student[2] }}</span></td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="3" class="text-center p-3 text-muted">No students with A grades yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold">
+                    <i class="fas fa-fire me-2 text-warning"></i> Toughest Courses (Lowest Pass Rates)
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Course Title</th>
+                                <th>Enrolled</th>
+                                <th>Passed</th>
+                                <th>Pass Rate</th>
+                                <th>Difficulty Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in hardest_courses %}
+                            {% set pass_rate = (c.passed / c.total * 100) | round(1) %}
+                            <tr>
+                                <td class="fw-bold">{{ c.title }}</td>
+                                <td>{{ c.total }}</td>
+                                <td>{{ c.passed }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">{{ pass_rate }}%</span>
+                                        <div class="progress flex-grow-1" style="height: 6px; width: 100px;">
+                                            <div class="progress-bar {% if pass_rate < 50 %}bg-danger{% elif pass_rate < 75 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                 style="width: {{ pass_rate }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if pass_rate < 50 %}
+                                        <span class="badge bg-danger">Very Hard</span>
+                                    {% elif pass_rate < 75 %}
+                                        <span class="badge bg-warning text-dark">Moderate</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Easy</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
+
     </div>
 </div>
 
 <script>
-    // 1. Enrollment Bar Chart
-    const ctx1 = document.getElementById('enrollmentChart').getContext('2d');
-    new Chart(ctx1, {
-        type: 'bar',
-        data: {
-            labels: {{ course_names | tojson }},
-            datasets: [{
-                label: 'Students Enrolled',
-                data: {{ enrollment_counts | tojson }},
-                backgroundColor: '#0d6efd',
-                borderRadius: 4
-            }]
-        },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    });
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('gradeChart');
+        
+        if (ctx) {
+            // These two lines are the magic. They take the Python variables
+            // 'grades' and 'grade_counts' and give them to JavaScript.
+            const labels = {{ grades | tojson }};
+            const data = {{ grade_counts | tojson }};
 
-    // 2. Grade Pie Chart
-    const ctx2 = document.getElementById('gradeChart').getContext('2d');
-    new Chart(ctx2, {
-        type: 'doughnut',
-        data: {
-            labels: {{ grades | tojson }},
-            datasets: [{
-                data: {{ grade_counts | tojson }},
-                backgroundColor: [
-                    '#198754', // Green for A
-                    '#0d6efd', // Blue for B
-                    '#ffc107', // Yellow for C
-                    '#fd7e14', // Orange for D
-                    '#dc3545'  // Red for F
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: { 
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
-            }
+            new Chart(ctx, {
+                type: 'bar', 
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Number of Students',
+                        data: data,
+                        backgroundColor: [
+                            'rgba(39, 174, 96, 0.6)',  // Green
+                            'rgba(41, 128, 185, 0.6)', // Blue
+                            'rgba(241, 196, 15, 0.6)', // Yellow
+                            'rgba(231, 76, 60, 0.6)'   // Red
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    }
+                }
+            });
         }
     });
 </script>
